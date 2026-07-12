@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="1024" height="1024">
+  <defs>
+    <clipPath id="squircle">
+      <rect x="0" y="0" width="512" height="512" rx="96"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#squircle)">
+    <!-- night ink sky -->
+    <rect width="512" height="512" fill="#161C18"/>
+
+    <!-- stars -->
+    <circle cx="70" cy="84" r="3" fill="#F5F5F0" opacity="0.85"/>
+    <circle cx="128" cy="146" r="2" fill="#F5F5F0" opacity="0.6"/>
+    <circle cx="368" cy="64" r="2.5" fill="#F5F5F0" opacity="0.75"/>
+    <circle cx="452" cy="180" r="2" fill="#F5F5F0" opacity="0.6"/>
+    <circle cx="56" cy="392" r="2" fill="#F5F5F0" opacity="0.5"/>
+    <circle cx="470" cy="420" r="2.5" fill="#F5F5F0" opacity="0.6"/>
+    <circle cx="200" cy="52" r="2" fill="#F5F5F0" opacity="0.55"/>
+
+    <!-- moon glow -->
+    <circle cx="256" cy="240" r="192" fill="#6FBF9B" opacity="0.06"/>
+    <circle cx="256" cy="240" r="176" fill="#6FBF9B" opacity="0.10"/>
+    <!-- jade moon -->
+    <circle cx="256" cy="240" r="162" fill="#BFE0D0"/>
+
+    <!-- dark ground mist -->
+    <path d="M -20 512 L -20 452 Q 256 418 532 452 L 532 512 Z" fill="#202A24"/>
+
+    <!-- breath spiral, luminous jade rising off the moon -->
+    <path d="M 106 274 C 80 254 86 216 116 208 C 140 202 144 178 126 166 C 115 158 113 146 119 136"
+          fill="none" stroke="#5FB392" stroke-width="6" stroke-linecap="round" opacity="0.95"/>
+
+    <!-- dragon silhouette draped across the moon -->
+    <path d="M 168 300 Q 220 204 272 272" fill="none" stroke="#10140F" stroke-width="28" stroke-linecap="round"/>
+    <path d="M 272 272 Q 304 310 336 276" fill="none" stroke="#10140F" stroke-width="20" stroke-linecap="round"/>
+    <path d="M 336 276 Q 366 244 392 282" fill="none" stroke="#10140F" stroke-width="13" stroke-linecap="round"/>
+    <path d="M 392 282 Q 402 298 414 296" fill="none" stroke="#10140F" stroke-width="8" stroke-linecap="round"/>
+    <!-- glowing jade tail tuft, poking just off the moon's edge -->
+    <path d="M 414 296 Q 434 292 442 276 Q 426 278 420 268 Q 417 282 407 290 Z" fill="#5FB392"/>
+
+    <!-- dorsal fins on the spine -->
+    <path d="M 206 240 Q 212 220 224 216 Q 222 230 232 238 Z" fill="#10140F"/>
+    <path d="M 354 254 Q 360 236 372 234 Q 370 246 378 252 Z" fill="#10140F"/>
+
+    <!-- head resting on the moon's face -->
+    <circle cx="162" cy="288" r="24" fill="#10140F"/>
+    <ellipse cx="134" cy="296" rx="28" ry="17" fill="#10140F"/>
+    <!-- antlers, silhouetted -->
+    <path d="M 164 266 Q 170 240 192 230" fill="none" stroke="#10140F" stroke-width="8" stroke-linecap="round"/>
+    <path d="M 176 272 Q 194 252 214 248" fill="none" stroke="#10140F" stroke-width="7" stroke-linecap="round"/>
+    <!-- closed eye + features cut in moonlight -->
+    <path d="M 146 288 Q 156 295 166 288" fill="none" stroke="#BFE0D0" stroke-width="4.5" stroke-linecap="round"/>
+    <circle cx="114" cy="292" r="3" fill="#BFE0D0"/>
+    <path d="M 118 306 Q 128 310 138 307" fill="none" stroke="#BFE0D0" stroke-width="3" stroke-linecap="round" opacity="0.85"/>
+    <!-- drooping whiskers -->
+    <path d="M 110 302 Q 92 310 88 326" fill="none" stroke="#10140F" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 112 286 Q 94 280 88 266" fill="none" stroke="#10140F" stroke-width="4" stroke-linecap="round"/>
+
+    <!-- vermillion seal stamp -->
+    <rect x="416" y="56" width="58" height="58" rx="9" fill="#B8402F"/>
+    <path d="M 445 100 C 428 100 424 82 438 74 C 452 66 462 78 456 88 C 452 95 442 94 440 86"
+          fill="none" stroke="#F5F5F0" stroke-width="6" stroke-linecap="round"/>
+  </g>
+</svg>
