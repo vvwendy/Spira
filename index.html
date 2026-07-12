@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Spira</title>
+  <meta name="description" content="The right breath for the moment you're in." />
+  <meta name="theme-color" content="#F5F5F0" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icons/spira-icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Spira" />
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: #F5F5F0; }
+    button { -webkit-tap-highlight-color: transparent; }
+  </style>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef } = React;
+
+// ---------- palette ----------
+const C = {
+  paper: "#F5F5F0", // porcelain
+  ink: "#242A26", // sumi ink, green undertone
+  faint: "#878E86", // stone gray
+  card: "#FDFDFA",
+  line: "#E2E4DD",
+  fire: "#B8402F", // vermillion / cinnabar seal red
+  fireSoft: "#F6E4E0",
+  calm: "#3E8E71", // jade
+  calmSoft: "#E0EEE8",
+  sleep: "#50597F", // indigo ink
+  sleepSoft: "#E4E6F0",
+};
+
+const GOALS = {
+  energy: { emoji: "⚡", label: "Focus & energy", color: C.fire, soft: C.fireSoft },
+  calm: { emoji: "🌊", label: "Calm & anxiety", color: C.calm, soft: C.calmSoft },
+  sleep: { emoji: "😴", label: "Sleep", color: C.sleep, soft: C.sleepSoft },
+};
+
+// ---------- techniques ----------
+const TECHNIQUES = [
+  {
+    id: "fire",
+    emoji: "🔥",
+    name: "Breath of Fire",
+    alias: "Kapalabhati",
+    roots: "Yogic · Kundalini & Hatha pranayama",
+    goals: ["energy"],
+    tagline: "Rapid belly-pump breathing that wakes you up",
+    what:
+      "Short, forceful exhales through the nose driven by snapping the belly in, with passive inhales in between — about 1–2 breaths per second. The work is all on the exhale; the inhale happens on its own when the belly relaxes.",
+    when: [
+      "Morning grogginess or an afternoon slump",
+      "Before deep work when coffee isn't the answer",
+      "Pre-workout to switch on",
+    ],
+    how: [
+      "Sit tall, hands on your belly to feel the pump.",
+      "Exhale sharply through the nose by pulling the navel in.",
+      "Let the inhale happen passively — don't force it.",
+      "Start slow (1/sec), build to 2/sec as it clicks.",
+    ],
+    caution:
+      "Skip this one if you're pregnant, have high blood pressure, heart or respiratory conditions, or just ate. Stop immediately if you feel dizzy or tingly — that's your cue to return to normal breathing.",
+    pattern: {
+      type: "rapid",
+      burstSeconds: 30,
+      restSeconds: 20,
+      rounds: 3,
+      note: "3 rounds · 30s bursts · 20s rest",
+    },
+  },
+  {
+    id: "box",
+    emoji: "📦",
+    name: "Box Breathing",
+    alias: "Square breathing",
+    roots: "Modern · popularized by Navy SEALs",
+    goals: ["energy", "calm"],
+    tagline: "Four equal sides: in, hold, out, hold",
+    what:
+      "Inhale, hold, exhale, hold — each for 4 seconds. Used by Navy SEALs and surgeons alike because it steadies the nervous system without sedating you: calm and sharp at the same time.",
+    when: [
+      "Before a stressful meeting or hard conversation",
+      "Regaining focus mid-task",
+      "Any time you're wound up but still need to perform",
+    ],
+    how: [
+      "Inhale through the nose for 4.",
+      "Hold gently for 4 — no straining.",
+      "Exhale through the nose for 4.",
+      "Hold empty for 4, then repeat.",
+    ],
+    caution: null,
+    pattern: {
+      type: "phased",
+      note: "4 · 4 · 4 · 4",
+      phases: [
+        { label: "Inhale", seconds: 4, scale: 1 },
+        { label: "Hold", seconds: 4, scale: 1 },
+        { label: "Exhale", seconds: 4, scale: 0.55 },
+        { label: "Hold", seconds: 4, scale: 0.55 },
+      ],
+    },
+  },
+  {
+    id: "478",
+    emoji: "🌙",
+    name: "4-7-8 Breathing",
+    alias: "Relaxing breath",
+    roots: "Modern · Dr. Weil, adapted from yogic ratios",
+    goals: ["sleep", "calm"],
+    tagline: "A long exhale that tips you toward sleep",
+    what:
+      "Inhale 4, hold 7, exhale slowly for 8. The extra-long exhale activates the parasympathetic (rest-and-digest) system. Dr. Andrew Weil popularized it as a natural tranquilizer — the effect compounds with nightly practice.",
+    when: [
+      "In bed, when your mind won't shut off",
+      "Waking at 3am and needing to drop back in",
+      "Winding down anxiety before rest",
+    ],
+    how: [
+      "Exhale fully to start.",
+      "Inhale quietly through the nose for 4.",
+      "Hold for 7.",
+      "Exhale audibly through the mouth for 8, like fogging a mirror.",
+    ],
+    caution:
+      "The 7-count hold can feel long at first — shorten the ratio (2·3.5·4) and keep the proportions rather than straining.",
+    pattern: {
+      type: "phased",
+      note: "4 · 7 · 8",
+      phases: [
+        { label: "Inhale", seconds: 4, scale: 1 },
+        { label: "Hold", seconds: 7, scale: 1 },
+        { label: "Exhale", seconds: 8, scale: 0.55 },
+      ],
+    },
+  },
+  {
+    id: "sigh",
+    emoji: "💨",
+    name: "Physiological Sigh",
+    alias: "Cyclic sighing",
+    roots: "Modern · physiology research",
+    goals: ["calm"],
+    tagline: "The fastest known way to calm down",
+    what:
+      "Two inhales through the nose — one big, one small sip on top — then one long exhale through the mouth. The double inhale pops open collapsed air sacs in the lungs, letting you offload CO₂ fast. Stanford research found it beats meditation for quick mood lift.",
+    when: [
+      "Acute stress spike — bad email, near-miss, panic edge",
+      "Between back-to-back meetings",
+      "Any moment you need relief in under a minute",
+    ],
+    how: [
+      "Big inhale through the nose.",
+      "Without exhaling, sip in a little more air.",
+      "Long, slow exhale through the mouth until empty.",
+      "1–3 reps is genuinely enough.",
+    ],
+    caution: null,
+    pattern: {
+      type: "phased",
+      note: "Double inhale · long exhale",
+      suggestedCycles: 3,
+      phases: [
+        { label: "Inhale", seconds: 2, scale: 0.85 },
+        { label: "Sip more air", seconds: 1, scale: 1 },
+        { label: "Long exhale", seconds: 6, scale: 0.55 },
+      ],
+    },
+  },
+  {
+    id: "coherent",
+    emoji: "🌊",
+    name: "Coherent Breathing",
+    alias: "Resonance breathing",
+    roots: "Modern · HRV research (the pace echoes rosary & mantra recitation)",
+    goals: ["calm"],
+    tagline: "Slow, even waves — about 5½ in, 5½ out",
+    what:
+      "Breathing at roughly 5–6 breaths per minute, where heart rate variability peaks and the nervous system settles into balance. Nothing to hold, nothing to count precisely — just long, even waves.",
+    when: [
+      "Background anxiety that won't name itself",
+      "A daily 5–10 minute steadying practice",
+      "Recovering after something stressful has passed",
+    ],
+    how: [
+      "Inhale gently through the nose ~5–6 seconds.",
+      "Exhale just as long, no pause between.",
+      "Let the breath feel like a wave, not a count.",
+    ],
+    caution: null,
+    pattern: {
+      type: "phased",
+      note: "5.5 in · 5.5 out",
+      phases: [
+        { label: "Inhale", seconds: 5.5, scale: 1 },
+        { label: "Exhale", seconds: 5.5, scale: 0.55 },
+      ],
+    },
+  },
+  {
+    id: "nostril",
+    emoji: "🌗",
+    name: "Alternate Nostril",
+    alias: "Nadi Shodhana",
+    roots: "Yogic · Hatha pranayama",
+    goals: ["energy", "calm"],
+    tagline: "Side-to-side breathing that balances and clears",
+    what:
+      "Breathing in one nostril and out the other, alternating sides, using your thumb and ring finger to close each in turn. Traditionally used to balance the two sides of the nervous system; practically, it forces slow nasal breathing plus just enough coordination to quiet mental chatter.",
+    when: [
+      "Before focused work or study",
+      "Pre-meditation settling",
+      "Feeling scattered and needing to gather",
+    ],
+    how: [
+      "Close the right nostril with your thumb; inhale left.",
+      "Close both briefly, then release right; exhale right.",
+      "Inhale right, switch, exhale left. That's one round.",
+    ],
+    caution: "Keep the touch light and skip it entirely when congested.",
+    pattern: {
+      type: "phased",
+      note: "4 in · 2 hold · 6 out, alternating",
+      phases: [
+        { label: "👈 Inhale left", seconds: 4, scale: 1 },
+        { label: "Hold", seconds: 2, scale: 1 },
+        { label: "👉 Exhale right", seconds: 6, scale: 0.55 },
+        { label: "👉 Inhale right", seconds: 4, scale: 1 },
+        { label: "Hold", seconds: 2, scale: 1 },
+        { label: "👈 Exhale left", seconds: 6, scale: 0.55 },
+      ],
+    },
+  },
+  {
+    id: "dantian",
+    emoji: "☯️",
+    name: "Taoist Belly Breathing",
+    alias: "Dantian / embryonic breathing",
+    roots: "Taoist · qigong & internal alchemy",
+    goals: ["calm", "sleep"],
+    tagline: "Sink the breath low, soft as silk",
+    what:
+      "The foundational Taoist practice of breathing into the lower dantian — the energy center a few finger-widths below the navel. Classical texts say the breath should be so fine that a feather held under the nose wouldn't stir. The ideal, called embryonic breathing (taixi), is breath so effortless it feels like the body breathes itself.",
+    when: [
+      "Winding down before sleep",
+      "Grounding when energy feels scattered or stuck 'up in the head'",
+      "As the base of qigong or tai chi practice",
+    ],
+    how: [
+      "Sit or stand with a tall, relaxed spine.",
+      "Rest a hand below your navel; let the low belly swell first on the inhale.",
+      "Keep the breath silent, smooth, and thin — never forced.",
+      "Let the exhale run slightly longer, releasing downward.",
+    ],
+    caution: null,
+    pattern: {
+      type: "phased",
+      note: "6 in · 8 out, no holds",
+      phases: [
+        { label: "Inhale · low & soft", seconds: 6, scale: 1 },
+        { label: "Exhale · release down", seconds: 8, scale: 0.55 },
+      ],
+    },
+  },
+  {
+    id: "anapanasati",
+    emoji: "🪷",
+    name: "Mindfulness of Breathing",
+    alias: "Ānāpānasati",
+    roots: "Buddhist · taught in the Ānāpānasati Sutta",
+    goals: ["calm"],
+    tagline: "Don't change the breath — befriend it",
+    what:
+      "The Buddha's core meditation instruction: rest attention on the natural breath without steering it. Notice the in-breath, the out-breath, long or short, exactly as it is. When the mind wanders — it will — return gently, without judgment. Over time this trains steadiness of attention and shows you how thoughts arise and pass.",
+    when: [
+      "Daily sitting practice, 5–20 minutes",
+      "When effortful techniques feel like too much",
+      "Building the attention muscle underneath every other practice",
+    ],
+    how: [
+      "Sit comfortably; let the breath settle on its own.",
+      "Rest attention wherever you feel it most — nostrils, chest, or belly.",
+      "Silently note 'in… out…' if it helps.",
+      "Each time the mind drifts, returning is the practice.",
+    ],
+    caution: null,
+    pattern: {
+      type: "open",
+      note: "Untimed · natural breath",
+      openLabel: "Watch the breath — don't steer it",
+    },
+  },
+  {
+    id: "susoku",
+    emoji: "🔢",
+    name: "Zen Breath Counting",
+    alias: "Susokukan",
+    roots: "Zen Buddhist · the first practice given in many zendos",
+    goals: ["energy", "calm"],
+    tagline: "Count each exhale, one to ten, begin again",
+    what:
+      "The classic first assignment in Zen training: silently count each exhale, one through ten, then start over. Lose count — everyone does — and you simply return to one. The counting gives a wandering mind a handrail, and losing count is instant, honest feedback about where your attention went.",
+    when: [
+      "Training focus before deep work or study",
+      "A racing mind that shrugs off subtler techniques",
+      "Starting a meditation habit",
+    ],
+    how: [
+      "Breathe naturally through the nose.",
+      "On the first exhale, silently count 'one'.",
+      "Continue to ten, then return to one.",
+      "Lose track or sail past ten? Smile and restart at one.",
+    ],
+    caution: null,
+    pattern: {
+      type: "phased",
+      note: "Count exhales 1–10",
+      countTo: 10,
+      phases: [
+        { label: "Inhale", seconds: 4, scale: 1 },
+        { label: "Exhale · count", seconds: 6, scale: 0.55 },
+      ],
+    },
+  },
+  {
+    id: "ujjayi",
+    emoji: "🌫️",
+    name: "Ujjayi Breath",
+    alias: "Victorious / ocean breath",
+    roots: "Yogic · the engine of Ashtanga & Vinyasa practice",
+    goals: ["energy", "calm"],
+    tagline: "A soft ocean sound that anchors moving focus",
+    what:
+      "Breathing through the nose while gently narrowing the throat, so each breath makes a soft ocean-wave sound. In flowing yoga it's the metronome the whole practice hangs on: the sound gives attention something to hold, and the slight resistance naturally slows and deepens the breath.",
+    when: [
+      "During yoga or slow, focused movement",
+      "Steadying yourself while staying alert",
+      "Wanting an audible anchor for attention",
+    ],
+    how: [
+      "Exhale through your mouth like fogging a mirror; notice the throat shape.",
+      "Keep that shape, close the mouth, breathe through the nose.",
+      "Aim for a soft, even ocean sound on both in and out.",
+      "If the sound turns harsh, ease off.",
+    ],
+    caution: "Keep the throat constriction light — soothing, never strained.",
+    pattern: {
+      type: "phased",
+      note: "5 in · 5 out, with sound",
+      phases: [
+        { label: "Inhale · ocean sound", seconds: 5, scale: 1 },
+        { label: "Exhale · ocean sound", seconds: 5, scale: 0.55 },
+      ],
+    },
+  },
+  {
+    id: "bhramari",
+    emoji: "🐝",
+    name: "Bhramari",
+    alias: "Humming bee breath",
+    roots: "Yogic · Hatha pranayama",
+    goals: ["calm", "sleep"],
+    tagline: "Hum the exhale and feel the buzz settle you",
+    what:
+      "Inhale through the nose, then hum the entire exhale like a bee — often with the ears gently covered so the vibration fills your head. The long humming exhale slows the breath right down, and research suggests humming sharply boosts nitric oxide in the nasal passages. Mostly, it just feels instantly soothing.",
+    when: [
+      "Pre-sleep wind-down",
+      "Releasing tension after a loud, overstimulating day",
+      "Quieting inner chatter fast",
+    ],
+    how: [
+      "Sit comfortably; optionally close your ears with your thumbs.",
+      "Inhale through the nose.",
+      "Exhale with a smooth, steady hum until empty.",
+      "Repeat 5–10 times, noticing the vibration.",
+    ],
+    caution: "Skip it while you have an ear infection.",
+    pattern: {
+      type: "phased",
+      note: "4 in · 8 humming out",
+      phases: [
+        { label: "Inhale", seconds: 4, scale: 1 },
+        { label: "Hum the exhale", seconds: 8, scale: 0.55 },
+      ],
+    },
+  },
+  {
+    id: "hesychast",
+    emoji: "🕯️",
+    name: "Jesus Prayer Breathing",
+    alias: "Hesychast prayer of the heart",
+    roots: "Eastern Orthodox Christian · hesychast monastic tradition",
+    goals: ["calm"],
+    tagline: "An ancient prayer paced on the breath",
+    what:
+      "In the hesychast tradition of Orthodox monasticism, the Jesus Prayer — 'Lord Jesus Christ, have mercy on me' — is joined to the rhythm of breathing: the first half silently on the inhale, the second on the exhale. Practitioners describe the prayer gradually descending into the heart until it repeats beneath thought. It's a devotional practice first, a breathing technique second — and the same rhythm works with any short phrase that matters to you.",
+    when: [
+      "Contemplative prayer or a settling ritual",
+      "Anxious moments when familiar words help",
+      "Pairing any meaningful phrase with slow breath",
+    ],
+    how: [
+      "Sit quietly, attention resting at the heart.",
+      "Inhale: the first half of the phrase, silently.",
+      "Exhale: the second half.",
+      "Let the words slow and soften with the breath.",
+    ],
+    caution: null,
+    pattern: {
+      type: "phased",
+      note: "Phrase in · phrase out",
+      phases: [
+        { label: "Inhale · first words", seconds: 5, scale: 1 },
+        { label: "Exhale · second words", seconds: 6, scale: 0.55 },
+      ],
+    },
+  },
+];
+
+// ---------- reference library ----------
+const TRADITIONS = [
+  {
+    name: "Yogic · Pranayama",
+    emoji: "🕉️",
+    items: [
+      { name: "Kapalabhati", rhythm: "Sharp exhale 1–2/sec · passive inhale · 20–30 pumps, then rest", alias: "Breath of fire / skull-shining breath", guidedId: "fire", desc: "Rapid forceful exhales with passive inhales, driven by pumping the belly. Energizing and clearing; one of the six classical purification practices (shatkarmas)." },
+      { name: "Bhastrika", rhythm: "Full in + full out, ~1/sec · 10–20 breaths · rest 30s · up to 3 rounds", alias: "Bellows breath", desc: "Kapalabhati's bigger sibling: both the inhale AND exhale are forceful and full, pumping like a blacksmith's bellows — typically 10–20 breaths, then rest and repeat. Builds heat and energy fast, and is even more intense than breath of fire.", caution: "Same cautions as breath of fire: skip if pregnant, hypertensive, or with heart/respiratory conditions; stop if dizzy." },
+      { name: "Nadi Shodhana", rhythm: "In 4 · hold 2 · out 6, alternating sides", alias: "Alternate nostril", guidedId: "nostril", desc: "Breathing in one nostril and out the other in alternation, said to balance the body's two energy channels. Practically: slow nasal breathing plus enough coordination to quiet mental chatter." },
+      { name: "Ujjayi", rhythm: "In 5 · out 5, ocean sound throughout", alias: "Victorious / ocean breath", guidedId: "ujjayi", desc: "Gentle throat constriction gives each breath a soft ocean sound — the audible metronome of flowing yoga practice." },
+      { name: "Bhramari", rhythm: "In 4 · humming out 8 · 5–10 reps", alias: "Humming bee", guidedId: "bhramari", desc: "Humming the entire exhale, often with ears covered so the vibration fills the head. Deeply and quickly soothing." },
+      { name: "Sitali", rhythm: "In through curled tongue 4–6 · out nose 6–8", alias: "Cooling breath", desc: "Curl the tongue into a straw and inhale through it — the air arrives noticeably cool — then exhale through the nose. Traditionally used to cool the body and temper anger; lovely on hot days.", },
+      { name: "Sitkari", rhythm: "In through teeth 4–6 · out nose 6–8", alias: "Hissing breath", desc: "The cooling alternative for people who can't curl their tongue (it's genetic): inhale through gently closed teeth with lips parted, making a soft hiss, then exhale through the nose." },
+      { name: "Surya Bhedana", rhythm: "In right 4 · hold 2 · out left 6", alias: "Sun-piercing breath", desc: "Inhale only through the right nostril (the 'sun' channel), exhale through the left. Traditionally heating and activating — a gentler wake-up than breath of fire." },
+      { name: "Chandra Bhedana", rhythm: "In left 4 · hold 2 · out right 6", alias: "Moon-piercing breath", desc: "The mirror practice: inhale left (the 'moon' channel), exhale right. Traditionally cooling and calming — sometimes suggested before sleep." },
+      { name: "Samavritti", rhythm: "In 4 · hold 4 · out 4 · hold 4 (or simply in 4 · out 4)", alias: "Equal breathing", desc: "Inhale, exhale — and optionally the holds between — all the same length. The ancient ancestor of what the modern world calls box breathing." },
+      { name: "Dirga", rhythm: "In 6: belly → ribs → chest · out 6 in reverse", alias: "Three-part breath", desc: "Fill the belly, then the ribs, then the upper chest; empty in reverse. The classic yoga-class opener, and one of the best trainers of breath awareness there is." },
+      { name: "Murcha", rhythm: "No self-timing — teacher-guided only", alias: "Swooning breath", desc: "An advanced classical practice: inhale, then hold with a chin lock until light-headedness approaches. Included here for completeness — classical texts themselves treat it as advanced.", caution: "Deliberately courting faintness is risky; generally discouraged without a qualified teacher, and honestly, even then." },
+      { name: "Plavini", rhythm: "Historical curiosity — no practical rhythm", alias: "Floating breath", desc: "The rarest of the classical eight: swallowing air into the stomach, which old texts claim lets a yogi float on water. Mostly a historical curiosity today." },
+    ],
+  },
+  {
+    name: "Taoist · Qigong",
+    emoji: "☯️",
+    items: [
+      { name: "Dantian Breathing", rhythm: "In 6 · out 8, no holds — soft and silent", alias: "Natural abdominal breathing", guidedId: "dantian", desc: "Sinking the breath to the lower dantian below the navel — soft, silent, and thin. The foundation of Taoist breathwork." },
+      { name: "Reverse Abdominal Breathing", rhythm: "In 4–6 (belly draws in) · out 4–6 (belly expands), kept subtle", alias: "Taoist reverse breathing", desc: "The belly draws gently IN on the inhale and expands on the exhale — the opposite of natural breathing. Used in martial arts and internal alchemy to build pressure and deliver power. Worth learning only after natural belly breathing is second nature.", caution: "Easy to overdo into tension; keep it subtle and learn natural breathing first." },
+      { name: "Embryonic Breathing", rhythm: "No counting — breath refines toward imperceptible", alias: "Taixi", desc: "Less a technique than a destination: breath so refined it becomes nearly imperceptible, as if — like a fetus — you no longer breathe through the nose at all. Classical Taoist texts treat it as the fruit of years of practice, associated with deep stillness and longevity." },
+      { name: "Tortoise Breathing", rhythm: "Work gradually toward in 8–10 · out 8–10 (3–4 breaths/min)", alias: "Guixi", desc: "Extremely slow, minimal breathing modeled on the turtle, which the Chinese tradition admired for its long life. A longevity practice: a handful of nearly invisible breaths per minute, cultivated gradually." },
+      { name: "Six Healing Sounds", rhythm: "Natural in · sounded out 6–8 · ~6 reps per sound", alias: "Liù Zì Jué", desc: "Six exhale sounds — xū, hē, hū, sī, chuī, xī — each traditionally paired with an organ system (liver, heart, spleen, lungs, kidneys, triple burner) and a gentle movement. A complete qigong set built entirely on the exhale." },
+    ],
+  },
+  {
+    name: "Buddhist · Zen & Tibetan",
+    emoji: "🪷",
+    items: [
+      { name: "Ānāpānasati", rhythm: "Natural breath — observe, don't steer or count", alias: "Mindfulness of breathing", guidedId: "anapanasati", desc: "The Buddha's core instruction: observe the natural breath without changing it. The root practice beneath most Buddhist meditation." },
+      { name: "Susokukan", rhythm: "Natural pace · count each exhale 1–10, restart", alias: "Zen breath counting", guidedId: "susoku", desc: "Count each exhale one to ten, then begin again. The first practice given in many Zen halls." },
+      { name: "Nine-Round Purification", rhythm: "In 4 · out 6 per breath · 3×3 alternating nostrils", alias: "Lung ro sel", desc: "A Tibetan session-opener: nine alternating-nostril breaths in three sets of three, each with visualization of clearing stale energy. Takes under two minutes and marks the transition into meditation." },
+      { name: "Vase Breathing", rhythm: "In 4 · gentle low hold 4–6 · slow out — keep it light", alias: "Bumpachen", desc: "Gently holding the breath low in the abdomen, 'like filling a vase,' often with light muscular engagement. The foundation beneath tummo and several Vajrayana practices.", caution: "Retention practices are traditionally learned from a teacher; keep any exploration brief and gentle." },
+      { name: "Tummo", rhythm: "Teacher-taught — don't self-time the retention", alias: "Inner heat", desc: "The famous Tibetan practice combining forceful breathing, vase retention, and visualization — studied in monks who can measurably raise their skin temperature in freezing rooms. The Wim Hof method is a loose modern adaptation of its breathing component.", caution: "Genuinely requires a qualified teacher. Never practice strong breathing + retention in or near water, while standing, or while driving — blackouts happen." },
+    ],
+  },
+  {
+    name: "Abrahamic · Christian, Sufi",
+    emoji: "🕯️",
+    items: [
+      { name: "Jesus Prayer Breathing", rhythm: "First half of phrase in ~5 · second half out ~6", alias: "Hesychasm", guidedId: "hesychast", desc: "The Orthodox monastic practice of joining the Jesus Prayer to the breath — first half on the inhale, second on the exhale — until the prayer 'descends into the heart.'" },
+      { name: "Dhikr Breathing", rhythm: "Phrase split across breath, ~5 in · ~6 out; group pace varies", alias: "Sufi remembrance", desc: "In Sufi practice, dhikr — remembrance of God — is paced on the breath: a sacred phrase such as 'Lā ilāha illa'llāh' divided across inhale and exhale, sometimes with rhythmic movement in group ceremonies. The repetition-plus-breath structure closely parallels mantra and hesychast practice." },
+      { name: "Paced Prayer", rhythm: "One Ave per breath ≈ in 4–5 · out 5–6 (~6 breaths/min)", alias: "Rosary rhythm", desc: "Reciting the rosary or Ave Maria naturally slows breathing to about six breaths per minute — the exact zone modern HRV research identifies as optimal. Researchers measuring this were startled to find contemplatives had converged on it centuries ago." },
+    ],
+  },
+  {
+    name: "Modern · Clinical & performance",
+    emoji: "🔬",
+    items: [
+      { name: "Box Breathing", rhythm: "In 4 · hold 4 · out 4 · hold 4", alias: "4·4·4·4", guidedId: "box", desc: "Equal inhale, hold, exhale, hold. Samavritti rebranded for Navy SEALs — calm and sharp at once." },
+      { name: "4-7-8", rhythm: "In 4 · hold 7 · out 8", alias: "Relaxing breath", guidedId: "478", desc: "Dr. Weil's sleep-oriented ratio built on a long exhale, adapted from yogic proportions." },
+      { name: "Physiological Sigh", rhythm: "Big in 2 · sip 1 · long out 6 · 1–3 reps", alias: "Cyclic sighing", guidedId: "sigh", desc: "Double inhale, long exhale — the body's own built-in reset, validated by Stanford research as the fastest route to calm." },
+      { name: "Coherent Breathing", rhythm: "In 5.5 · out 5.5, no pauses", alias: "Resonance breathing", guidedId: "coherent", desc: "About 5.5 breaths per minute, where heart-rate variability peaks. The same pace paced prayer arrives at." },
+      { name: "Diaphragmatic Breathing", rhythm: "In 4 (belly rises) · out 6 · 5–10 min", alias: "Belly breathing", desc: "The clinical baseline: hand on belly, breathe so the belly rises before the chest. Retrains shallow chest-breathing patterns and underlies nearly every technique in this library." },
+      { name: "Pursed-Lip Breathing", rhythm: "In nose 2 · out pursed lips 4", alias: null, desc: "Inhale through the nose for ~2 counts, exhale slowly through pursed lips for ~4, like blowing on hot soup. Keeps airways open longer on the exhale — a staple for COPD and breathlessness during exertion." },
+      { name: "Buteyko Method", rhythm: "Gentle nasal in 3 · out 4 · relaxed pause — volume kept low", alias: "Reduced breathing", desc: "A Ukrainian-developed system built on the idea that many people chronically overbreathe: gentle nasal breathing, reduced volume, and timed 'control pauses.' Used for asthma and anxious overbreathing; taught over weeks, not minutes." },
+      { name: "Wim Hof Method", rhythm: "30–40 deep breaths · exhale-hold to comfort · 15s recovery hold — seated only", alias: null, desc: "Rounds of 30–40 deep, fast breaths followed by a long exhale-hold, usually paired with cold exposure. Popular for energy and stress resilience; effectively a modern secular remix of tummo's breathing.", caution: "Only seated or lying down. Never in or near water, never while driving — the exhale-hold can cause blackout without warning." },
+      { name: "Holotropic Breathwork", rhythm: "Facilitated sessions only — no self-timing", alias: null, desc: "Extended sessions of fast, deep breathing with evocative music, developed by Stanislav Grof to induce altered states after psychedelics were banned. Intense and polarizing.", caution: "Facilitated settings only; contraindicated for cardiovascular conditions, seizure disorders, pregnancy, and some psychiatric histories." },
+    ],
+  },
+];
+
+// ---------- storage ----------
+const KEY = "spira:sessions";
+
+async function loadSessions() {
+  try {
+    return JSON.parse(localStorage.getItem(KEY)) || [];
+  } catch {
+    return [];
+  }
+}
+
+async function saveSessions(sessions) {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(sessions));
+  } catch (e) {
+    console.error("save failed", e);
+  }
+}
+
+function dayKey(ts) {
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate()
+  ).padStart(2, "0")}`;
+}
+
+function calcStreak(sessions) {
+  if (!sessions.length) return 0;
+  const days = new Set(sessions.map((s) => dayKey(s.ts)));
+  let streak = 0;
+  const cursor = new Date();
+  // streak may start today or yesterday
+  if (!days.has(dayKey(cursor.getTime()))) cursor.setDate(cursor.getDate() - 1);
+  while (days.has(dayKey(cursor.getTime()))) {
+    streak++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+
+function fmtDuration(sec) {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  if (m === 0) return `${s}s`;
+  return s ? `${m}m ${s}s` : `${m}m`;
+}
+
+// ---------- shared bits ----------
+const serif = { fontFamily: "'Iowan Old Style', Georgia, 'Times New Roman', serif" };
+const sans = {
+  fontFamily:
+    "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+};
+
+function GoalChips({ goals, size = 13 }) {
+  return (
+    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+      {goals.map((g) => (
+        <span
+          key={g}
+          style={{
+            ...sans,
+            fontSize: size,
+            background: GOALS[g].soft,
+            color: GOALS[g].color,
+            borderRadius: 999,
+            padding: "3px 10px",
+            fontWeight: 600,
+          }}
+        >
+          {GOALS[g].emoji} {GOALS[g].label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+// ---------- pacer ----------
+function Pacer({ tech, onFinish, onBack }) {
+  const goal = GOALS[tech.goals[0]];
+  const p = tech.pattern;
+  const [elapsed, setElapsed] = useState(0); // total session seconds (0.1 steps)
+  const [phaseIdx, setPhaseIdx] = useState(0);
+  const [phaseElapsed, setPhaseElapsed] = useState(0);
+  const [cycles, setCycles] = useState(0);
+  const [round, setRound] = useState(1);
+  const [inBurst, setInBurst] = useState(true);
+  const raf = useRef(null);
+  const startRef = useRef(Date.now());
+  const stateRef = useRef({ phaseIdx: 0, phaseStart: Date.now(), round: 1, inBurst: true, cycles: 0 });
+
+  useEffect(() => {
+    startRef.current = Date.now();
+    stateRef.current = { phaseIdx: 0, phaseStart: Date.now(), round: 1, inBurst: true, cycles: 0 };
+    const tick = () => {
+      const now = Date.now();
+      setElapsed((now - startRef.current) / 1000);
+      const st = stateRef.current;
+
+      if (p.type === "rapid") {
+        const segLen = st.inBurst ? p.burstSeconds : p.restSeconds;
+        const segElapsed = (now - st.phaseStart) / 1000;
+        if (segElapsed >= segLen) {
+          if (st.inBurst) {
+            if (st.round >= p.rounds) {
+              finish(now);
+              return;
+            }
+            st.inBurst = false;
+          } else {
+            st.inBurst = true;
+            st.round += 1;
+          }
+          st.phaseStart = now;
+          setInBurst(st.inBurst);
+          setRound(st.round);
+        }
+        setPhaseElapsed((now - st.phaseStart) / 1000);
+      } else if (p.type === "open") {
+        setPhaseElapsed((now - startRef.current) / 1000);
+      } else {
+        const phase = p.phases[st.phaseIdx];
+        const segElapsed = (now - st.phaseStart) / 1000;
+        if (segElapsed >= phase.seconds) {
+          st.phaseIdx = (st.phaseIdx + 1) % p.phases.length;
+          if (st.phaseIdx === 0) {
+            st.cycles += 1;
+            setCycles(st.cycles);
+          }
+          st.phaseStart = now;
+          setPhaseIdx(st.phaseIdx);
+        }
+        setPhaseElapsed((now - st.phaseStart) / 1000);
+      }
+      raf.current = requestAnimationFrame(tick);
+    };
+    raf.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const finish = (now) => {
+    cancelAnimationFrame(raf.current);
+    const dur = Math.round(((now || Date.now()) - startRef.current) / 1000);
+    onFinish(dur);
+  };
+
+  // orb visuals
+  let orbScale = 1;
+  let phaseLabel = "";
+  let countLeft = "";
+  let transition = "transform 0.3s ease";
+
+  if (p.type === "rapid") {
+    if (inBurst) {
+      phaseLabel = "Pump the breath";
+      countLeft = `${Math.ceil(tech.pattern.burstSeconds - phaseElapsed)}`;
+      orbScale = null; // CSS pulse animation
+    } else {
+      phaseLabel = "Rest · breathe slow";
+      countLeft = `${Math.ceil(tech.pattern.restSeconds - phaseElapsed)}`;
+      const t = (phaseElapsed % 8) / 8;
+      orbScale = t < 0.5 ? 0.6 + 0.4 * (t / 0.5) : 1 - 0.4 * ((t - 0.5) / 0.5);
+      transition = "none";
+    }
+  } else if (p.type === "open") {
+    phaseLabel = p.openLabel;
+    countLeft = "";
+    const t = (phaseElapsed % 10) / 10;
+    orbScale = 0.72 + 0.14 * Math.sin(t * Math.PI * 2);
+    transition = "none";
+  } else {
+    const phase = p.phases[phaseIdx];
+    phaseLabel = phase.label;
+    countLeft = `${Math.ceil(phase.seconds - phaseElapsed)}`;
+    orbScale = phase.scale;
+    transition = `transform ${phase.seconds}s ease-in-out`;
+  }
+
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        background: goal.soft,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        padding: "24px 20px 40px",
+        transition: "background 0.6s ease",
+      }}
+    >
+      <style>{`
+        @keyframes firePulse {
+          0% { transform: scale(0.7); }
+          50% { transform: scale(1); }
+          100% { transform: scale(0.7); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .orb { transition: none !important; animation: none !important; transform: scale(0.85) !important; }
+        }
+      `}</style>
+
+      <div style={{ width: "100%", maxWidth: 420, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <button
+          onClick={onBack}
+          style={{ ...sans, background: "none", border: "none", color: goal.color, fontSize: 15, fontWeight: 600, cursor: "pointer", padding: 8 }}
+        >
+          ← Back
+        </button>
+        <span style={{ ...sans, fontSize: 14, color: C.faint }}>{fmtDuration(Math.floor(elapsed))}</span>
+      </div>
+
+      <h2 style={{ ...serif, color: C.ink, fontSize: 26, margin: "18px 0 4px", textAlign: "center" }}>
+        {tech.emoji} {tech.name}
+      </h2>
+      <p style={{ ...sans, color: C.faint, fontSize: 14, margin: 0 }}>{p.note}</p>
+
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%" }}>
+        <div style={{ height: 240, width: 240, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div
+            className="orb"
+            style={{
+              width: 200,
+              height: 200,
+              borderRadius: "50%",
+              background: `radial-gradient(circle at 35% 30%, ${goal.color}CC, ${goal.color})`,
+              boxShadow: `0 12px 48px ${goal.color}55`,
+              transform: orbScale === null ? undefined : `scale(${orbScale})`,
+              transition,
+              animation: orbScale === null ? "firePulse 0.66s ease-in-out infinite" : "none",
+            }}
+          />
+        </div>
+        <div style={{ ...serif, fontSize: 24, color: C.ink, marginTop: 28, textAlign: "center" }}>{phaseLabel}</div>
+        <div style={{ ...sans, fontSize: 40, color: goal.color, fontWeight: 300, marginTop: 4, fontVariantNumeric: "tabular-nums" }}>
+          {countLeft}
+        </div>
+        <div style={{ ...sans, fontSize: 14, color: C.faint, marginTop: 10 }}>
+          {p.type === "rapid"
+            ? `Round ${round} of ${p.rounds}`
+            : p.type === "open"
+            ? "No counting — just noticing"
+            : p.countTo
+            ? `Count ${(cycles % p.countTo) + 1} of ${p.countTo}`
+            : `Cycle ${cycles + 1}${p.suggestedCycles ? ` · ${p.suggestedCycles} is plenty` : ""}`}
+        </div>
+      </div>
+
+      <button
+        onClick={() => finish()}
+        style={{
+          ...sans,
+          background: goal.color,
+          color: "#fff",
+          border: "none",
+          borderRadius: 999,
+          padding: "14px 36px",
+          fontSize: 16,
+          fontWeight: 600,
+          cursor: "pointer",
+          boxShadow: `0 4px 16px ${goal.color}44`,
+        }}
+      >
+        End session
+      </button>
+    </div>
+  );
+}
+
+// ---------- detail ----------
+function Detail({ tech, onStart, onBack }) {
+  const goal = GOALS[tech.goals[0]];
+  return (
+    <div style={{ minHeight: "100vh", background: C.paper, padding: "24px 20px 110px" }}>
+      <div style={{ maxWidth: 560, margin: "0 auto" }}>
+        <button
+          onClick={onBack}
+          style={{ ...sans, background: "none", border: "none", color: goal.color, fontSize: 15, fontWeight: 600, cursor: "pointer", padding: "8px 0" }}
+        >
+          ← All techniques
+        </button>
+
+        <div style={{ fontSize: 52, marginTop: 8 }}>{tech.emoji}</div>
+        <h1 style={{ ...serif, fontSize: 32, color: C.ink, margin: "8px 0 2px" }}>{tech.name}</h1>
+        <p style={{ ...sans, color: C.faint, fontSize: 15, margin: "0 0 12px", fontStyle: "italic" }}>{tech.alias}</p>
+        <GoalChips goals={tech.goals} />
+        <p style={{ ...sans, color: C.faint, fontSize: 13.5, margin: "10px 0 0" }}>
+          Roots · {tech.roots}
+        </p>
+
+        <Section title="What it is">
+          <p style={{ ...sans, fontSize: 15, lineHeight: 1.65, color: C.ink, margin: 0 }}>{tech.what}</p>
+        </Section>
+
+        <Section title="Reach for it when">
+          <ul style={{ ...sans, fontSize: 15, lineHeight: 1.7, color: C.ink, margin: 0, paddingLeft: 20 }}>
+            {tech.when.map((w, i) => (
+              <li key={i}>{w}</li>
+            ))}
+          </ul>
+        </Section>
+
+        <Section title="How to do it">
+          <ol style={{ ...sans, fontSize: 15, lineHeight: 1.7, color: C.ink, margin: 0, paddingLeft: 20 }}>
+            {tech.how.map((h, i) => (
+              <li key={i}>{h}</li>
+            ))}
+          </ol>
+        </Section>
+
+        {tech.caution && (
+          <div
+            style={{
+              background: "#F7E9E5",
+              border: `1px solid ${C.fire}33`,
+              borderRadius: 16,
+              padding: "14px 16px",
+              marginTop: 20,
+            }}
+          >
+            <div style={{ ...sans, fontSize: 13, fontWeight: 700, color: C.fire, marginBottom: 4 }}>⚠️ Take care</div>
+            <p style={{ ...sans, fontSize: 14, lineHeight: 1.6, color: C.ink, margin: 0 }}>{tech.caution}</p>
+          </div>
+        )}
+      </div>
+
+      <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, padding: "16px 20px 28px", background: `linear-gradient(transparent, ${C.paper} 40%)` }}>
+        <button
+          onClick={onStart}
+          style={{
+            ...sans,
+            display: "block",
+            width: "100%",
+            maxWidth: 560,
+            margin: "0 auto",
+            background: goal.color,
+            color: "#fff",
+            border: "none",
+            borderRadius: 999,
+            padding: "16px",
+            fontSize: 17,
+            fontWeight: 600,
+            cursor: "pointer",
+            boxShadow: `0 6px 20px ${goal.color}44`,
+          }}
+        >
+          Begin · {tech.pattern.note}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Section({ title, children }) {
+  return (
+    <div style={{ marginTop: 24 }}>
+      <h3 style={{ ...serif, fontSize: 19, color: C.ink, margin: "0 0 8px" }}>{title}</h3>
+      {children}
+    </div>
+  );
+}
+
+// ---------- log ----------
+function Log({ sessions }) {
+  const streak = calcStreak(sessions);
+  const totalMin = Math.round(sessions.reduce((a, s) => a + s.duration, 0) / 60);
+  const recent = [...sessions].sort((a, b) => b.ts - a.ts).slice(0, 30);
+
+  const byDay = {};
+  recent.forEach((s) => {
+    const k = dayKey(s.ts);
+    (byDay[k] = byDay[k] || []).push(s);
+  });
+
+  return (
+    <div style={{ maxWidth: 560, margin: "0 auto" }}>
+      <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
+        <StatCard big={`${streak}`} label={streak === 1 ? "day streak 🔥" : "day streak 🔥"} />
+        <StatCard big={`${sessions.length}`} label="sessions" />
+        <StatCard big={`${totalMin}`} label="minutes" />
+      </div>
+
+      {recent.length === 0 ? (
+        <div style={{ ...sans, textAlign: "center", color: C.faint, fontSize: 15, marginTop: 56, lineHeight: 1.6 }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>🍃</div>
+          No sessions yet. Pick a technique and your practice will show up here.
+        </div>
+      ) : (
+        Object.entries(byDay).map(([day, list]) => (
+          <div key={day} style={{ marginTop: 24 }}>
+            <div style={{ ...sans, fontSize: 13, fontWeight: 700, color: C.faint, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 8 }}>
+              {new Date(list[0].ts).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}
+            </div>
+            {list.map((s, i) => {
+              const t = TECHNIQUES.find((t) => t.id === s.techId);
+              return (
+                <div
+                  key={i}
+                  style={{
+                    background: C.card,
+                    border: `1px solid ${C.line}`,
+                    borderRadius: 16,
+                    padding: "12px 16px",
+                    marginBottom: 8,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <span style={{ ...sans, fontSize: 15, color: C.ink }}>
+                    {t ? `${t.emoji} ${t.name}` : s.techId}
+                  </span>
+                  <span style={{ ...sans, fontSize: 14, color: C.faint }}>{fmtDuration(s.duration)}</span>
+                </div>
+              );
+            })}
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
+
+function StatCard({ big, label }) {
+  return (
+    <div style={{ flex: 1, background: C.card, border: `1px solid ${C.line}`, borderRadius: 18, padding: "16px 8px", textAlign: "center" }}>
+      <div style={{ ...serif, fontSize: 30, color: C.ink }}>{big}</div>
+      <div style={{ ...sans, fontSize: 12.5, color: C.faint, marginTop: 2 }}>{label}</div>
+    </div>
+  );
+}
+
+// ---------- library ----------
+function Library({ onOpenGuided }) {
+  const [open, setOpen] = useState(null);
+  return (
+    <div style={{ maxWidth: 560, margin: "0 auto" }}>
+      <p style={{ ...sans, fontSize: 14, color: C.faint, lineHeight: 1.6, margin: "4px 0 0" }}>
+        The wider world of breathwork, grouped by tradition. Tap any form to read about it.
+      </p>
+      {TRADITIONS.map((trad) => (
+        <div key={trad.name} style={{ marginTop: 26 }}>
+          <h3 style={{ ...serif, fontSize: 20, color: C.ink, margin: "0 0 10px" }}>
+            {trad.emoji} {trad.name}
+          </h3>
+          {trad.items.map((item) => {
+            const isOpen = open === item.name;
+            return (
+              <div
+                key={item.name}
+                style={{
+                  background: C.card,
+                  border: `1px solid ${isOpen ? C.ink + "33" : C.line}`,
+                  borderRadius: 16,
+                  marginBottom: 8,
+                  overflow: "hidden",
+                }}
+              >
+                <button
+                  onClick={() => setOpen(isOpen ? null : item.name)}
+                  style={{
+                    display: "flex",
+                    width: "100%",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    background: "none",
+                    border: "none",
+                    padding: "13px 16px",
+                    cursor: "pointer",
+                    textAlign: "left",
+                  }}
+                >
+                  <span>
+                    <span style={{ ...serif, fontSize: 16.5, color: C.ink }}>
+                      {item.name}
+                    </span>
+                    {item.alias && (
+                      <span style={{ ...sans, fontSize: 13, color: C.faint, fontStyle: "italic" }}>
+                        {"  "}· {item.alias}
+                      </span>
+                    )}
+                  </span>
+                  <span style={{ ...sans, color: C.faint, fontSize: 18, marginLeft: 8 }}>{isOpen ? "–" : "+"}</span>
+                </button>
+                {isOpen && (
+                  <div style={{ padding: "0 16px 14px" }}>
+                    {item.rhythm && (
+                      <div
+                        style={{
+                          ...sans,
+                          display: "inline-block",
+                          fontSize: 13,
+                          fontWeight: 700,
+                          color: C.calm,
+                          background: C.calmSoft,
+                          borderRadius: 999,
+                          padding: "5px 12px",
+                          marginBottom: 10,
+                        }}
+                      >
+                        🫁 {item.rhythm}
+                      </div>
+                    )}
+                    <p style={{ ...sans, fontSize: 14.5, lineHeight: 1.65, color: C.ink, margin: 0 }}>{item.desc}</p>
+                    {item.caution && (
+                      <p style={{ ...sans, fontSize: 13.5, lineHeight: 1.6, color: C.fire, margin: "10px 0 0" }}>
+                        ⚠️ {item.caution}
+                      </p>
+                    )}
+                    {item.guidedId && (
+                      <button
+                        onClick={() => onOpenGuided(item.guidedId)}
+                        style={{
+                          ...sans,
+                          marginTop: 12,
+                          background: C.ink,
+                          color: C.paper,
+                          border: "none",
+                          borderRadius: 999,
+                          padding: "9px 18px",
+                          fontSize: 13.5,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                        }}
+                      >
+                        Open guided session
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ---------- home ----------
+function Home({ filter, setFilter, onPick, tab, setTab, sessions }) {
+  const shown =
+    filter === "all" ? TECHNIQUES : TECHNIQUES.filter((t) => t.goals.includes(filter));
+  const streak = calcStreak(sessions);
+
+  return (
+    <div style={{ minHeight: "100vh", background: C.paper, padding: "28px 20px 48px" }}>
+      <div style={{ maxWidth: 560, margin: "0 auto" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+          <h1 style={{ ...serif, fontSize: 34, color: C.ink, margin: 0 }}>Spira</h1>
+          {streak > 0 && (
+            <span style={{ ...sans, fontSize: 14, color: C.fire, fontWeight: 700 }}>🔥 {streak} day{streak > 1 ? "s" : ""}</span>
+          )}
+        </div>
+        <p style={{ ...sans, color: C.faint, fontSize: 15, margin: "6px 0 20px" }}>
+          The right breath for the moment you're in.
+        </p>
+
+        <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+          {["guide", "library", "log"].map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              style={{
+                ...sans,
+                flex: 1,
+                padding: "10px",
+                borderRadius: 999,
+                border: `1px solid ${tab === t ? C.ink : C.line}`,
+                background: tab === t ? C.ink : "transparent",
+                color: tab === t ? C.paper : C.faint,
+                fontSize: 13.5,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              {t === "guide" ? "🌬️ Guided" : t === "library" ? "📚 Library" : "📖 Log"}
+            </button>
+          ))}
+        </div>
+
+        {tab === "log" ? (
+          <Log sessions={sessions} />
+        ) : tab === "library" ? (
+          <Library onOpenGuided={(id) => onPick(TECHNIQUES.find((t) => t.id === id))} />
+        ) : (
+          <>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 18 }}>
+              {[["all", "All"], ...Object.entries(GOALS).map(([k, g]) => [k, `${g.emoji} ${g.label}`])].map(
+                ([k, label]) => (
+                  <button
+                    key={k}
+                    onClick={() => setFilter(k)}
+                    style={{
+                      ...sans,
+                      padding: "7px 14px",
+                      borderRadius: 999,
+                      border: `1px solid ${filter === k ? C.ink : C.line}`,
+                      background: filter === k ? C.ink : C.card,
+                      color: filter === k ? C.paper : C.ink,
+                      fontSize: 13.5,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {label}
+                  </button>
+                )
+              )}
+            </div>
+
+            {shown.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => onPick(t)}
+                style={{
+                  display: "block",
+                  width: "100%",
+                  textAlign: "left",
+                  background: C.card,
+                  border: `1px solid ${C.line}`,
+                  borderRadius: 20,
+                  padding: "18px 18px",
+                  marginBottom: 12,
+                  cursor: "pointer",
+                }}
+              >
+                <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+                  <div style={{ fontSize: 32, lineHeight: 1 }}>{t.emoji}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ ...serif, fontSize: 20, color: C.ink }}>{t.name}</div>
+                    <div style={{ ...sans, fontSize: 14, color: C.faint, margin: "3px 0 4px", lineHeight: 1.5 }}>
+                      {t.tagline}
+                    </div>
+                    <div style={{ ...sans, fontSize: 12, color: C.faint, fontStyle: "italic", margin: "0 0 8px" }}>
+                      {t.roots}
+                    </div>
+                    <GoalChips goals={t.goals} size={12} />
+                  </div>
+                </div>
+              </button>
+            ))}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---------- done screen ----------
+function Done({ tech, duration, streak, onHome }) {
+  const goal = GOALS[tech.goals[0]];
+  return (
+    <div style={{ minHeight: "100vh", background: C.paper, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, textAlign: "center" }}>
+      <div style={{ fontSize: 56 }}>{tech.emoji}</div>
+      <h2 style={{ ...serif, fontSize: 28, color: C.ink, margin: "14px 0 6px" }}>Session saved</h2>
+      <p style={{ ...sans, color: C.faint, fontSize: 15, margin: 0 }}>
+        {tech.name} · {fmtDuration(duration)}
+      </p>
+      {streak > 0 && (
+        <p style={{ ...sans, color: C.fire, fontSize: 15, fontWeight: 700, marginTop: 12 }}>
+          🔥 {streak}-day streak
+        </p>
+      )}
+      <button
+        onClick={onHome}
+        style={{ ...sans, marginTop: 28, background: goal.color, color: "#fff", border: "none", borderRadius: 999, padding: "14px 36px", fontSize: 16, fontWeight: 600, cursor: "pointer" }}
+      >
+        Done
+      </button>
+    </div>
+  );
+}
+
+// ---------- app ----------
+function BreatheApp() {
+  const [view, setView] = useState("home");
+  const [tab, setTab] = useState("guide");
+  const [filter, setFilter] = useState("all");
+  const [tech, setTech] = useState(null);
+  const [sessions, setSessions] = useState([]);
+  const [lastDuration, setLastDuration] = useState(0);
+
+  useEffect(() => {
+    loadSessions().then(setSessions);
+  }, []);
+
+  const handleFinish = async (duration) => {
+    if (duration >= 10) {
+      const next = [...sessions, { techId: tech.id, ts: Date.now(), duration }];
+      setSessions(next);
+      setLastDuration(duration);
+      await saveSessions(next);
+      setView("done");
+    } else {
+      setView("detail");
+    }
+  };
+
+  if (view === "session" && tech)
+    return <Pacer tech={tech} onFinish={handleFinish} onBack={() => setView("detail")} />;
+  if (view === "detail" && tech)
+    return <Detail tech={tech} onStart={() => setView("session")} onBack={() => setView("home")} />;
+  if (view === "done" && tech)
+    return <Done tech={tech} duration={lastDuration} streak={calcStreak(sessions)} onHome={() => setView("home")} />;
+
+  return (
+    <Home
+      filter={filter}
+      setFilter={setFilter}
+      tab={tab}
+      setTab={setTab}
+      sessions={sessions}
+      onPick={(t) => {
+        setTech(t);
+        setView("detail");
+      }}
+    />
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<BreatheApp />);
+
+  </script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => navigator.serviceWorker.register("sw.js"));
+    }
+  </script>
+</body>
+</html>
